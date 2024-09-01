@@ -113,10 +113,7 @@ func (s *Scraper) Scrape() error {
 	}
 
 	// Navigate to each team link and take a screenshot (limited to first 3)
-	for i, link := range teamLinks {
-		if i >= 3 {
-			break // Stop after processing 3 links
-		}
+	for _, link := range teamLinks {
 
 		fullURL := "https://fantasy.premierleague.com" + link
 		page.MustNavigate(fullURL)
