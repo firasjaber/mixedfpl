@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  go-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      # map port 8080 to port 4200 on the host
+      - "4200:8080"
+    environment:
+      - GO_ENV=production
