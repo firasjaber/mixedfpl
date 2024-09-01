@@ -21,8 +21,7 @@
 </head>
 <body>
     <h1>FPL Team Viewer</h1>
-    <p>Last updated: {{.LastUpdated.Format "2006-01-02 15:04:05"}}</p>
-    <a href="/refresh">Refresh Data</a>
+    <p>Last updated: <span id="lastUpdated">{{.LastUpdated.Format "2006-01-02T15:04:05Z07:00"}}</span></p>
     <div class="grid">
         {{range .Teams}}
         <div class="team">
@@ -31,5 +30,25 @@
         </div>
         {{end}}
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const lastUpdatedElement = document.getElementById('lastUpdated');
+            const isoTimestamp = lastUpdatedElement.textContent;
+            const date = new Date(isoTimestamp);
+            
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                timeZoneName: 'short'
+            };
+            
+            lastUpdatedElement.textContent = date.toLocaleString(undefined, options);
+        });
+    </script>
 </body>
 </html>
