@@ -3,7 +3,8 @@ package web
 import (
 	"html/template"
 	"net/http"
-	"time"
+	"os"
+	"strings"
 
 	"github.com/firasjaber/mixedfpl/internal/generator"
 	"github.com/firasjaber/mixedfpl/internal/scraper"
@@ -39,12 +40,34 @@ func (s *Server) handleIndex(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
+	// get the last updated time from the league standings screenshot file name
+	// the file name is in the format of league_standings_YYYY-MM-DD_HH-MM-SS.png
+	// so we can get the last updated time by getting the file name and parsing it
+	files, err := os.ReadDir("public/screenshots")
+	if err != nil {
+		http.Error(w, "Error reading screenshots directory", http.StatusInternalServerError)
+		return
+	}
+
+	lastUpdated := ""
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		fileName := file.Name()
+		if strings.HasPrefix(fileName, "league_standings_") {
+			// remove the prefix and the .png from the end
+			lastUpdated = fileName[len("league_standings_") : len(fileName)-len(".png")]
+			break
+		}
+	}
+
 	data := struct {
 		Teams       []generator.Team
-		LastUpdated time.Time
+		LastUpdated string
 	}{
 		Teams:       teams,
-		LastUpdated: time.Now(),
+		LastUpdated: lastUpdated,
 	}
 
 	s.templates.ExecuteTemplate(w, "template.html", data)

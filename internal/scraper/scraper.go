@@ -210,8 +210,18 @@ func (s *Scraper) captureLeagueStandings(page *rod.Page) error {
 		return fmt.Errorf("error taking screenshot of standings table: %v", err)
 	}
 
-	// Save the screenshot to a file
-	filename := filepath.Join("public/screenshots", "league_standings.png")
+	// remove all previous league standings screenshots
+	files, err := os.ReadDir("public/screenshots")
+	if err != nil {
+		return fmt.Errorf("error reading screenshots directory: %v", err)
+	}
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), "league_standings_") {
+			os.Remove(filepath.Join("public/screenshots", file.Name()))
+		}
+	}
+	// Save the screenshot to a file, include also the timestamp in ISO format including timezone
+	filename := filepath.Join("public/screenshots", fmt.Sprintf("league_standings_%s.png", time.Now().Format(time.RFC3339)))
 	err = os.WriteFile(filename, screenshot, 0644)
 	if err != nil {
 		return fmt.Errorf("error saving standings screenshot: %v", err)
