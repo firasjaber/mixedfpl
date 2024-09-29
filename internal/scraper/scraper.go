@@ -114,7 +114,6 @@ func (s *Scraper) Scrape() error {
 
 	// Navigate to each team link and take a screenshot (limited to first 3)
 	for _, link := range teamLinks {
-
 		fullURL := "https://fantasy.premierleague.com" + link
 		page.MustNavigate(fullURL)
 		fmt.Printf("Navigated to: %s\n", fullURL)
@@ -142,12 +141,7 @@ func (s *Scraper) Scrape() error {
 		}`)
 
 		// Set a larger viewport size
-		page.MustSetViewport(1200, 1100, 1, false)
-
-		// Zoom out to fit more content
-		page.MustEval(`() => {
-			document.body.style.zoom = "0.90";
-		}`)
+		page.MustSetViewport(410, 1200, 1, false)
 
 		// Scroll the element into view
 		err = element.ScrollIntoView()
@@ -199,7 +193,7 @@ func (s *Scraper) captureLeagueStandings(page *rod.Page) error {
 	element := page.MustElement("div[class^='Layout__Main'] table")
 
 	// Set a larger viewport size
-	page.MustSetViewport(1200, 800, 1, false)
+	page.MustSetViewport(410, 1200, 1, false)
 
 	// Scroll the element into view
 	err := element.ScrollIntoView()
