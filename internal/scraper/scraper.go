@@ -53,7 +53,7 @@ func (s *Scraper) Scrape() error {
 	page.MustScreenshot("public/screenshots/debug.png")
 
 	// Select all rows in the standings table
-	rows, err := page.Elements("tbody tr[class^='StandingsRow']")
+	rows, err := page.Timeout(3 * time.Second).Elements("tbody tr[class^='StandingsRow']")
 	if err != nil {
 		fmt.Println("Error selecting rows:", err)
 		return fmt.Errorf("error selecting rows: %v", err)
@@ -65,14 +65,14 @@ func (s *Scraper) Scrape() error {
 
 	for _, row := range rows {
 		// Find the second td in each row
-		secondTd, err := row.Element("td:nth-child(2)")
+		secondTd, err := row.Timeout(3 * time.Second).Element("td:nth-child(2)")
 		if err != nil {
 			fmt.Println("Error finding second td:", err)
 			continue
 		}
 
 		// Find the link within the second td
-		link, err := secondTd.Element("a")
+		link, err := secondTd.Timeout(3 * time.Second).Element("a")
 		if err != nil {
 			fmt.Println("Error finding link:", err)
 			continue
@@ -100,7 +100,7 @@ func (s *Scraper) Scrape() error {
 
 	// if cookie modal exists, click the close button
 	// cookie modal handled := make(chan bool, 1)
-	cookieBtn, err := page.Element("#onetrust-accept-btn-handler")
+	cookieBtn, err := page.Timeout(3 * time.Second).Element("#onetrust-accept-btn-handler")
 	if err == nil && cookieBtn != nil {
 		cookieBtn.MustClick()
 		time.Sleep(1 * time.Second)
@@ -123,7 +123,11 @@ func (s *Scraper) Scrape() error {
 		time.Sleep(3 * time.Second)
 
 		// Find the heading element and get its text
-		headingElement := page.MustElement("h2[class^='Title']")
+		headingElement, err := page.Timeout(3 * time.Second).Element("h2[class^='Title']")
+		if err != nil {
+			fmt.Printf("Error finding heading element for %s: %v\n", link, err)
+			continue
+		}
 		headingText, err := headingElement.Text()
 		if err != nil {
 			fmt.Printf("Error getting heading text for %s: %v\n", link, err)
@@ -131,7 +135,11 @@ func (s *Scraper) Scrape() error {
 		}
 
 		// Find the element and ensure it's visible
-		element := page.MustElement("div[class^='GraphicPatterns__PatternWrapMain']")
+		element, err := page.Timeout(3 * time.Second).Element("div[class^='GraphicPatterns__PatternWrapMain']")
+		if err != nil {
+			fmt.Printf("Error finding element for %s: %v\n", link, err)
+			continue
+		}
 
 		// Adjust z-index to bring the element to the front
 		page.MustEval(`() => {
@@ -189,16 +197,21 @@ func (s *Scraper) captureLeagueStandings(page *rod.Page) error {
 	page.MustWaitStable()
 	time.Sleep(2 * time.Second)
 
+	fmt.Println("Waiting for the standings table to load")
+
 	// Find the standings table
-	element := page.MustElement("div[class^='Layout__Main'] table")
+	element, err := page.Timeout(3 * time.Second).Element("div[class^='Layout__Main'] table")
+	if err != nil {
+		return fmt.Errorf("error finding standings table: %v", err)
+	}
 
 	// Set a larger viewport size
 	page.MustSetViewport(410, 1200, 1, false)
 
 	// Scroll the element into view
-	err := element.ScrollIntoView()
-	if err != nil {
-		return fmt.Errorf("error scrolling to standings table: %v", err)
+	scrollErr := element.ScrollIntoView()
+	if scrollErr != nil {
+		return fmt.Errorf("error scrolling to standings table: %v", scrollErr)
 	}
 
 	// Wait a bit for any animations to complete
