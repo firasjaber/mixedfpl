@@ -46,20 +46,33 @@
         document.addEventListener('DOMContentLoaded', function() {
             const lastUpdatedElement = document.getElementById('lastUpdatedTimestamp');
             const isoTimestamp = lastUpdatedElement.textContent;
-            const fixedDateString = isoTimestamp.replace('T13-47-48', 'T13:47:48');
+            const fixedDateString = isoTimestamp.replace(/T(\d{2})-(\d{2})-(\d{2})/, 'T$1:$2:$3');
             const date = new Date(fixedDateString);
             
-            const options = { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit',
-                timeZoneName: 'short'
-            };
+            function getTimeDifference(date) {
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.round(diffMs / 60000);
+                
+                if (diffMins < 1) return 'just now';
+                if (diffMins === 1) return '1 minute ago';
+                if (diffMins < 60) return `${diffMins} minutes ago`;
+                
+                const diffHours = Math.floor(diffMins / 60);
+                if (diffHours === 1) return '1 hour ago';
+                if (diffHours < 24) return `${diffHours} hours ago`;
+                
+                const diffDays = Math.floor(diffHours / 24);
+                if (diffDays === 1) return '1 day ago';
+                return `${diffDays} days ago`;
+            }
             
-            lastUpdatedElement.textContent = date.toLocaleString(undefined, options);
+            function updateTimestamp() {
+                lastUpdatedElement.textContent = getTimeDifference(date);
+            }
+            
+            updateTimestamp();
+            setInterval(updateTimestamp, 60000); // Update every minute
         });
     </script>
 </body>
