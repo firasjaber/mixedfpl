@@ -22,7 +22,7 @@ type Scraper struct {
 }
 
 func NewScraper() *Scraper {
-	return &Scraper{LeagueURL: "https://fantasy.premierleague.com/leagues/63322/standings/c"}
+	return &Scraper{LeagueURL: "https://fantasy.premierleague.com/leagues/215685/standings/c"}
 }
 
 func (s *Scraper) Scrape() error {
@@ -36,13 +36,14 @@ func (s *Scraper) Scrape() error {
 	u := launcher.New().
 		Set("no-sandbox", "").
 		Set("disable-gpu", "").
+		Headless(false).
 		MustLaunch()
 
 	browser := rod.New().ControlURL(u).MustConnect()
 	defer browser.MustClose()
 
 	// Navigate to the league page
-	page := browser.MustPage("https://fantasy.premierleague.com/leagues/63322/standings/c")
+	page := browser.MustPage("https://fantasy.premierleague.com/leagues/215685/standings/c")
 	fmt.Println("Navigated to league page")
 
 	// Wait for the page to load
@@ -53,7 +54,7 @@ func (s *Scraper) Scrape() error {
 	page.MustScreenshot("public/screenshots/debug.png")
 
 	// Select all rows in the standings table
-	rows, err := page.Timeout(3 * time.Second).Elements("tbody tr[class^='StandingsRow']")
+	rows, err := page.Timeout(3 * time.Second).Elements("tbody tr")
 	if err != nil {
 		fmt.Println("Error selecting rows:", err)
 		return fmt.Errorf("error selecting rows: %v", err)
@@ -121,9 +122,9 @@ func (s *Scraper) Scrape() error {
 		// Wait for the page to load
 		page.MustWaitStable()
 		time.Sleep(3 * time.Second)
-
+// //*[@id="page-title"]
 		// Find the heading element and get its text
-		headingElement, err := page.Timeout(3 * time.Second).Element("h2[class^='Title']")
+		headingElement, err := page.Timeout(3 * time.Second).Element("h2[id^='page-title']")
 		if err != nil {
 			fmt.Printf("Error finding heading element for %s: %v\n", link, err)
 			continue
@@ -133,9 +134,11 @@ func (s *Scraper) Scrape() error {
 			fmt.Printf("Error getting heading text for %s: %v\n", link, err)
 			headingText = "Unknown" // Use a default value if we can't get the heading
 		}
-
+		
+		teamSelector := "html > body > main > div > div > div > div > div > div:nth-child(2) > div > section:first-child"
+		
 		// Find the element and ensure it's visible
-		element, err := page.Timeout(3 * time.Second).Element("div[class^='GraphicPatterns__PatternWrapMain']")
+		element, err := page.Timeout(3 * time.Second).Element(teamSelector)
 		if err != nil {
 			fmt.Printf("Error finding element for %s: %v\n", link, err)
 			continue
@@ -143,10 +146,13 @@ func (s *Scraper) Scrape() error {
 
 		// Adjust z-index to bring the element to the front
 		page.MustEval(`() => {
-			const element = document.querySelector("div[class^='GraphicPatterns__PatternWrapMain']");
+			const element = document.querySelector("html > body > main > div > div > div > div > div > div:nth-child(2) > div > section:first-child");
 			element.style.zIndex = "9999";
 			element.style.position = "relative";
 		}`)
+		if err != nil {
+			fmt.Printf("Error adjusting element style for %s: %v\n", link, err)
+		}
 
 		// Set a larger viewport size
 		page.MustSetViewport(410, 1200, 1, false)
@@ -200,7 +206,7 @@ func (s *Scraper) captureLeagueStandings(page *rod.Page) error {
 	fmt.Println("Waiting for the standings table to load")
 
 	// Find the standings table
-	element, err := page.Timeout(3 * time.Second).Element("div[class^='Layout__Main'] table")
+	element, err := page.Timeout(3 * time.Second).Element("main[id^='mainContent'] table")
 	if err != nil {
 		return fmt.Errorf("error finding standings table: %v", err)
 	}
